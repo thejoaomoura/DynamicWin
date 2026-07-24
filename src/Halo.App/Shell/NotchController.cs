@@ -7,6 +7,7 @@ using Halo.ClaudeCode;
 using Halo.Codex;
 using Halo.Interop;
 using Halo.Widgets;
+using Halo.Text;
 using Windows.System;
 
 namespace Halo.Shell;
@@ -389,11 +390,12 @@ internal sealed class NotchController
         System.Threading.ThreadPool.QueueUserWorkItem(_ =>
         {
             string? top = topProcess();
-            string? body = top != null ? $"{top} is using the most." : fallbackBody;
+            string? body = top != null ? Loc.T("{0} is using the most.", top)
+                : fallbackBody != null ? Loc.T(fallbackBody) : null;
             if (body == null) return;
             _notifSrc.EnqueueLocal(new Halo.Notifications.NotifItem
             {
-                App = "System", Title = $"High {resource} usage — {pct}%",
+                App = Loc.T("System"), Title = Loc.T("High {0} usage — {1}%", Loc.T(resource), pct),
                 Body = body, Kind = "cpu", Duration = 7, Icon = CpuBadge(),
             });
         });
@@ -522,7 +524,7 @@ internal sealed class NotchController
         _battWarned = true;
         _notifSrc.EnqueueLocal(new Halo.Notifications.NotifItem
         {
-            App = "Battery", Title = $"Battery low — {pct}%", Body = "Tap to turn on Power Saver.",
+            App = Loc.T("Battery"), Title = Loc.T("Battery low — {0}%", pct), Body = Loc.T("Tap to turn on Power Saver."),
             Kind = "battery", Duration = 8, OnActivate = EnablePowerSaver, Icon = BatteryBadge(),
         });
     }
@@ -565,7 +567,7 @@ internal sealed class NotchController
         _netBadShown = true;
         _notifSrc.EnqueueLocal(new Halo.Notifications.NotifItem
         {
-            App = "Network", Title = "Bad internet :/", Kind = "net", Duration = 6, Icon = NetBadge(),
+            App = Loc.T("Network"), Title = Loc.T("Bad internet :/"), Kind = "net", Duration = 6, Icon = NetBadge(),
         });
     }
 
@@ -1387,8 +1389,8 @@ internal sealed class NotchController
         catch { path = ""; }
         _notifSrc.EnqueueLocal(new Halo.Notifications.NotifItem
         {
-            App = isScreenshot ? Halo.Notifications.NotifItem.ScreenshotApp : Halo.Notifications.NotifItem.ClipboardApp,
-            Title = isScreenshot ? Halo.Notifications.NotifItem.ScreenshotTitle : Halo.Notifications.NotifItem.ImageCopiedTitle,
+            App = Loc.T(isScreenshot ? Halo.Notifications.NotifItem.ScreenshotApp : Halo.Notifications.NotifItem.ClipboardApp),
+            Title = Loc.T(isScreenshot ? Halo.Notifications.NotifItem.ScreenshotTitle : Halo.Notifications.NotifItem.ImageCopiedTitle),
             Preview = shot,
             LaunchPath = path,
         });
