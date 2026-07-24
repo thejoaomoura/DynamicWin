@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using Halo.Text;
 
 namespace Halo.Widgets;
 
@@ -233,9 +234,9 @@ internal sealed class BtWidget : IWidget
         // Windows does not always give a device a name. Naming it is a presentation decision, so
         // it is made here rather than upstream, where the same string would also be a lookup key.
         using (var nb = new SolidBrush(Mul(White, fade)))
-            g.DrawString(name.Length > 0 ? name : "Bluetooth device", nf, nb, tx, cy - 26);
+            g.DrawString(name.Length > 0 ? name : Loc.T("Bluetooth device"), nf, nb, tx, cy - 26);
         using (var bb = new SolidBrush(Mul(Dim, fade)))
-            g.DrawString(fresh ? $"{pct}% battery" : "battery unknown", bf, bb, tx, cy + 4);
+            g.DrawString(fresh ? Loc.T("{0}% battery", pct) : Loc.T("battery unknown"), bf, bb, tx, cy + 4);
     }
 
     public IReadOnlyList<(RectangleF rect, Action<PointF> onClick)> Buttons(int w, int h)
