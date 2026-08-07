@@ -169,6 +169,19 @@ internal static class Program
         bmp.Save(outPath, System.Drawing.Imaging.ImageFormat.Png);
     }
 
+    /// <summary>
+    /// A Bluetooth pill in a fixed state, for the render checks. The widget takes a coordinator
+    /// snapshot and nothing else, so a preview needs no watcher, no PnP query and no hardware --
+    /// which is the whole reason the state a translator needs to see is reachable at all.
+    /// </summary>
+    private static IWidget BtPreview(string name, int pct)
+    {
+        var w = new Halo.Widgets.BtWidget();
+        w.Apply(new Halo.Notifications.BtSnapshot(
+            Revision: 1, Connected: true, Id: "halo:render", Name: name, Pct: pct, Flash: false));
+        return w;
+    }
+
     private static void RenderWidget(string outPath, string which)
     {
         var t = new System.Threading.Thread(() =>
@@ -193,6 +206,12 @@ internal static class Program
                 "claude" => new ClaudeCodeWidget(new Halo.ClaudeCode.StatusStore(), 0, () => { }),
                 "codex" => new CodexWidget(new Halo.Codex.CodexStatusStore(), Halo.Codex.CodexSurface.Cli, () => { }),
                 "download" => new DownloadWidget(),
+                // The three Bluetooth captions are the ones a translator cannot check by reading
+                // the table: two of them depend on whether a reading resolved, and the third only
+                // appears for a device Windows never named.
+                "bt" => BtPreview("QCY-T13", 72),
+                "bt-unknown" => BtPreview("POCO X6 Pro 5G", -1),
+                "bt-unnamed" => BtPreview("", -1),
                 _ => new MediaWidget(new MediaSessions(), 0),
             };
             for (int i = 0; i < 100 && !w.IsActive; i++)

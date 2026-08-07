@@ -130,5 +130,7 @@ internal static class PtBr
         // ── bluetooth ─────────────────────────────────────────────────────
         ["Bluetooth device"] = "Dispositivo Bluetooth",
         ["{0}% battery"] = "{0}% de bateria",
+        // Not "bateria desconhecida": the device is known, the reading is what is missing.
+        ["battery unknown"] = "bateria indisponível",
     };
 }
