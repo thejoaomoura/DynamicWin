@@ -125,6 +125,30 @@ public class BtBatteryMatchTests
         Assert.Equal(BtBatteryMatch.Unknown, BtBatteryMatch.Resolve(dev, sources));
     }
 
+    /// <summary>
+    /// Windows does not always name a device. The name is empty rather than a stand-in label, so
+    /// the name rules cannot fire at all -- which is right: there is no device out there actually
+    /// called "Bluetooth device", and a substring rule would happily match one of these to anything.
+    /// </summary>
+    [Fact]
+    public void AnUnnamedDeviceNeverMatchesByName()
+    {
+        var dev = Dev("bt#aaa", "", container: null);
+        var sources = Sources((null, "Magic Mouse", 40), (null, "", 90));
+
+        Assert.Equal(BtBatteryMatch.Unknown, BtBatteryMatch.Resolve(dev, sources));
+    }
+
+    /// <summary>An unnamed device is still resolvable, because identity does not need a name.</summary>
+    [Fact]
+    public void AnUnnamedDeviceStillResolvesByContainer()
+    {
+        var dev = Dev("bt#aaa", "", C1);
+        var sources = Sources((C1, "", 90), (C2, "Magic Mouse", 40));
+
+        Assert.Equal(90, BtBatteryMatch.Resolve(dev, sources));
+    }
+
     /// <summary>The two APIs disagree on bracketing and case; the same device must still match.</summary>
     [Fact]
     public void ContainerIdsMatchAcrossGuidFormats()

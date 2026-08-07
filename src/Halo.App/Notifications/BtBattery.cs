@@ -40,8 +40,6 @@ internal sealed class BtBattery
     /// <summary>Synthetic id for the bt-test.txt preview device, so it can be cleared like a real one.</summary>
     private const string TriggerId = "halo:bt-test";
 
-    /// <summary>Display name for a device Windows gave us no name for. Never used as a lookup key.</summary>
-    private const string UnnamedDevice = "Bluetooth device";
 
     private readonly BtCoordinator _coord;
     private readonly Func<bool> _shouldRefresh;
@@ -115,7 +113,11 @@ internal sealed class BtBattery
             // The old code returned here instead, which is why a device connected before login
             // never appeared at all -- and the app starts with Windows, so that was the normal case.
             bool seeded = !_live;
-            string name = info.Name?.Length > 0 ? info.Name : UnnamedDevice;
+            // A device Windows gave no name for carries an empty one, not a stand-in label. The
+            // wording a user reads is the widget's business, and a made-up name here would be both
+            // a translatable string in the wrong place and a lookup key that matches nothing real:
+            // asking PnP for a device literally called "Bluetooth device" was never going to work.
+            string name = info.Name ?? "";
             info.Properties.TryGetValue(AepContainerKey, out var container);
             await _coord.Added(new BtDevice(info.Id, name, BtBatteryMatch.Normalize(container)),
                 flash: !seeded);

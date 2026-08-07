@@ -230,8 +230,10 @@ internal sealed class BtWidget : IWidget
         float tx = cx + rr + 22;
         using var nf = new Font("Segoe UI Semibold", 22f, GraphicsUnit.Pixel);
         using var bf = new Font("Segoe UI", 15f, GraphicsUnit.Pixel);
+        // Windows does not always give a device a name. Naming it is a presentation decision, so
+        // it is made here rather than upstream, where the same string would also be a lookup key.
         using (var nb = new SolidBrush(Mul(White, fade)))
-            g.DrawString(name, nf, nb, tx, cy - 26);
+            g.DrawString(name.Length > 0 ? name : "Bluetooth device", nf, nb, tx, cy - 26);
         using (var bb = new SolidBrush(Mul(Dim, fade)))
             g.DrawString(fresh ? $"{pct}% battery" : "battery unknown", bf, bb, tx, cy + 4);
     }

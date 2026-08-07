@@ -96,7 +96,7 @@ internal sealed class BtCoordinator
             if (!_order.Contains(dev.Id)) _order.Add(dev.Id);
             ticket = ++_ticket;
         }
-        _log?.Invoke(flash ? $"connected: {dev.Name}" : $"seed (already connected): {dev.Name}");
+        _log?.Invoke(flash ? $"connected: {Label(dev.Name)}" : $"seed (already connected): {Label(dev.Name)}");
 
         int pct = await _readBattery(dev);
         if (pct < 0)
@@ -105,13 +105,13 @@ internal sealed class BtCoordinator
             await _delay(_retryAfter);
             pct = await _readBattery(dev);
         }
-        if (pct < 0) _log?.Invoke($"no battery reading: {dev.Name}");
+        if (pct < 0) _log?.Invoke($"no battery reading: {Label(dev.Name)}");
 
         // A device we cannot read is still a device that is connected. It is featured with the
         // battery withheld rather than hidden: the pill's job is to say what is attached, and
         // dropping a phone from the list because it publishes no percentage answers a question
         // nobody asked. "Unknown" is a state the widget can draw honestly.
-        if (Commit(ticket, dev.Id, pct, flash)) _log?.Invoke($"featured: {dev.Name} pct={Fmt(pct)}");
+        if (Commit(ticket, dev.Id, pct, flash)) _log?.Invoke($"featured: {Label(dev.Name)} pct={Fmt(pct)}");
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ internal sealed class BtCoordinator
             _devices.Remove(id);
             _order.Remove(id);
             ticket = ++_ticket;
-            _log?.Invoke($"removed (disconnected): {gone.Name}");
+            _log?.Invoke($"removed (disconnected): {Label(gone.Name)}");
             if (id != _featuredId) return;
 
             candidates = new List<BtDevice>(_order.Count);
@@ -147,7 +147,7 @@ internal sealed class BtCoordinator
             // A handoff is a fallback, not an arrival: show it, but do not grab focus for it.
             if (Commit(ticket, cand.Id, pct, flash: false))
             {
-                _log?.Invoke($"handoff: {cand.Name} pct={pct}");
+                _log?.Invoke($"handoff: {Label(cand.Name)} pct={pct}");
                 return;
             }
             // Rejected either because this handoff is stale, or because the candidate itself
@@ -162,7 +162,7 @@ internal sealed class BtCoordinator
             if (Superseded(ticket)) return;
             if (Commit(ticket, cand.Id, BtBatteryMatch.Unknown, flash: false))
             {
-                _log?.Invoke($"handoff: {cand.Name} pct=unknown");
+                _log?.Invoke($"handoff: {Label(cand.Name)} pct=unknown");
                 return;
             }
         }
@@ -230,6 +230,12 @@ internal sealed class BtCoordinator
 
     /// <summary>Battery level for the log, where a negative reading reads as unknown.</summary>
     private static string Fmt(int pct) => pct < 0 ? "unknown" : pct.ToString();
+
+    /// <summary>
+    /// Device name for the log. Diagnostics only -- never drawn, never a lookup key, and for that
+    /// reason never translated. A nameless device still has to be followable through the log.
+    /// </summary>
+    private static string Label(string name) => name.Length > 0 ? name : "(unnamed)";
 
     /// <summary>
     /// Publishes <paramref name="id"/> as featured, unless a newer selection got there first or the
