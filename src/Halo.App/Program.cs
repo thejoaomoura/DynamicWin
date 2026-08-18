@@ -48,8 +48,17 @@ internal static class Program
             Halo.ClaudeCode.Limits.Poke();
             Halo.ClaudeCode.NetMon.Poke();
             Halo.Codex.CodexNetMon.Poke();
-            _ = new NotchController(notch);
+            var controller = new NotchController(notch);
+
+            // Hiding is the controller's call because it owns what is on screen; quitting is made
+            // here because this is where the message loop that has to end actually lives.
+            var tray = new TrayIcon();
+            tray.ToggleRequested += () => tray.Hidden = controller.ToggleHidden();
+            tray.ExitRequested += () => { tray.Remove(); Win32.PostQuitMessage(0); };
+            tray.Show();
+
             Win32.RunMessageLoop();
+            tray.Remove();
         }
         catch (Exception ex)
         {

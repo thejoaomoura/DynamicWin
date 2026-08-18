@@ -21,19 +21,28 @@ internal enum NotchVisibilityAction
 internal readonly record struct NotchVisibilityDecision(
     NotchVisibilityAction Action,
     bool ReturnEarly,
-    bool HiddenForFullscreen);
+    bool Hidden);
 
 internal static class NotchVisibility
 {
 
-    internal static NotchVisibilityDecision Decide(bool fullscreen, bool hiddenForFullscreen)
-    {
-        if (fullscreen)
-            return new(hiddenForFullscreen ? NotchVisibilityAction.None : NotchVisibilityAction.Hide,
-                ReturnEarly: true, HiddenForFullscreen: true);
+    /// <summary>
+    /// Whether the pill should be off screen this frame. A live notification lifts the fullscreen
+    /// hide, because a toast you never see is worse than a pill over a video -- but it does not
+    /// lift the user's own hide. Asking for the pill to go away and being answered by a banner is
+    /// the app arguing with you.
+    /// </summary>
+    internal static bool ShouldHide(bool userHidden, bool fullscreen, bool notifLive)
+        => userHidden || (fullscreen && !notifLive);
 
-        return new(hiddenForFullscreen ? NotchVisibilityAction.ShowAndRender : NotchVisibilityAction.None,
-            ReturnEarly: false, HiddenForFullscreen: false);
+    internal static NotchVisibilityDecision Decide(bool shouldHide, bool hidden)
+    {
+        if (shouldHide)
+            return new(hidden ? NotchVisibilityAction.None : NotchVisibilityAction.Hide,
+                ReturnEarly: true, Hidden: true);
+
+        return new(hidden ? NotchVisibilityAction.ShowAndRender : NotchVisibilityAction.None,
+            ReturnEarly: false, Hidden: false);
     }
 }
 
@@ -168,7 +177,8 @@ internal sealed class NotchController
     private bool _resizing;
     private Win32.POINT _resizeFrom;
     private float _scale0, _handle;
-    private bool _hiddenForFullscreen;
+    private bool _hidden;
+    private bool _userHidden;
 
     private float _offsetX;
     private bool _moving;
@@ -295,6 +305,13 @@ internal sealed class NotchController
         _timer.Tick += OnTick;
         _timer.Start();
     }
+
+    /// <summary>
+    /// Puts the pill away, or brings it back, and reports where it landed. Deliberately not
+    /// persisted: hiding means "not now", where exiting means "not again". A pill that stayed
+    /// invisible across a restart would leave a running app with nothing on screen to explain it.
+    /// </summary>
+    internal bool ToggleHidden() => _userHidden = !_userHidden;
 
     private void OnTick(DispatcherQueueTimer sender, object args)
     {
@@ -586,8 +603,9 @@ internal sealed class NotchController
         var active = fullscreen ? [] : ActiveIndices();
 
         bool notifLive = _notif != null || _notifSrc.HasPending;
-        var visibility = NotchVisibility.Decide(fullscreen && !notifLive, _hiddenForFullscreen);
-        _hiddenForFullscreen = visibility.HiddenForFullscreen;
+        var visibility = NotchVisibility.Decide(
+            NotchVisibility.ShouldHide(_userHidden, fullscreen, notifLive), _hidden);
+        _hidden = visibility.Hidden;
 
         if (visibility.Action == NotchVisibilityAction.Hide)
             _notch.SetVisible(false);
